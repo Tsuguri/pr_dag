@@ -93,6 +93,14 @@ pub extern "C" fn custom_operation(
     Box::into_raw(op)
 }
 
+// This function will not consume provided node. User is still responsible for destroying it
+// afterwards
+#[unsafe(no_mangle)]
+pub extern "C" fn evalue_node(node: *const OperationNode) -> f32 {
+    let value = unsafe { (*node).inner.evaluate() };
+    value
+}
+
 #[cfg(test)]
 mod tests {
 
