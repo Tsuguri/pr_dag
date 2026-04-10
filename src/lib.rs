@@ -1,4 +1,5 @@
 use dyn_hash::DynHash;
+use ordered_float::OrderedFloat;
 use std::{
     collections::HashMap,
     fmt::Debug,
@@ -25,6 +26,14 @@ impl EvaluationCache {
     }
 }
 
+impl EvaluationCache {
+    pub fn create() -> Self {
+        Self {
+            entries: HashMap::new(),
+        }
+    }
+}
+
 pub trait Operation: Debug + DynHash {
     fn evaluate(&self, cache: &mut EvaluationCache) -> f32;
 }
@@ -47,19 +56,37 @@ impl Operation for AddOp {
 
 #[derive(Debug, Hash)]
 pub struct Leaf {
-    pub value: f32,
+    pub value: OrderedFloat<f32>,
 }
 
 impl Operation for Leaf {
-    fn evaluate(&self, cache: &mut EvaluationCache) -> f32 {}
+    fn evaluate(&self, cache: &mut EvaluationCache) -> f32 {
+        *self.value
+    }
 }
 
 pub fn add(left: Box<dyn Operation>, right: Box<dyn Operation>) -> Box<dyn Operation> {
     Box::new(AddOp { left, right })
 }
 
+pub fn leaf(value: f32) -> Box<dyn Operation> {
+    Box::new(Leaf {
+        value: value.into(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::EvaluationCache;
+
+    use super::{add, leaf};
     #[test]
-    fn basic_add() {}
+    fn basic_add() {
+        let operation = add(leaf(10.0), leaf(12.0));
+        let mut cache = EvaluationCache::create();
+
+        let result = operation.evaluate(&mut cache);
+
+        assert_eq!(result, 22.0);
+    }
 }
