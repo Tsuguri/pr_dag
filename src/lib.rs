@@ -48,6 +48,17 @@ pub extern "C" fn destroy_node(node: *mut OperationNode) {
     let _ = unsafe { Box::from_raw(node) };
 }
 
+// Cache node. Honestly I would cache any non-trivial node that will be used in multiple places (later cloned
+// with clone_operation) OR is host-language operation.
+#[unsafe(no_mangle)]
+pub extern "C" fn cache_node(node: *mut OperationNode) -> *mut OperationNode {
+    let node = unsafe { Box::from_raw(node) };
+    let op = Box::new(OperationNode {
+        inner: cache(node.inner),
+    });
+    Box::into_raw(op)
+}
+
 #[cfg(test)]
 mod tests {
 
