@@ -1,4 +1,3 @@
-use ordered_float::OrderedFloat;
 use std::{cell::RefCell, fmt::Debug, rc::Rc};
 
 pub trait Operation: Debug {
@@ -10,9 +9,7 @@ pub fn add(left: Rc<dyn Operation>, right: Rc<dyn Operation>) -> Rc<dyn Operatio
 }
 
 pub fn leaf(value: f32) -> Rc<dyn Operation> {
-    Rc::new(Leaf {
-        value: value.into(),
-    })
+    Rc::new(Leaf { value: value })
 }
 
 // computing hash of subtrees is more expensive than computing value of the subtree but I though it
@@ -41,14 +38,14 @@ impl Operation for AddOp {
     }
 }
 
-#[derive(Debug, Hash)]
+#[derive(Debug)]
 pub struct Leaf {
-    pub value: OrderedFloat<f32>,
+    pub value: f32,
 }
 
 impl Operation for Leaf {
     fn evaluate(&self) -> f32 {
-        *self.value
+        self.value
     }
 }
 
