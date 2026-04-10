@@ -15,6 +15,11 @@ pub fn leaf(value: f32) -> Rc<dyn Operation> {
     })
 }
 
+// computing hash of subtrees is more expensive than computing value of the subtree but I though it
+// would be ok as a training/test exercise. But honestly it doesn't make a lot of sense. DAG was
+// mentioned so I transformed structure from tree to DAG (Box->Rc) and introduced explicit cache
+// node that will compute inner structure only once.
+// It's impossible to edit this data structure so it's not possible to introduce cycles.
 pub fn cache(inner: Rc<dyn Operation>) -> Rc<dyn Operation> {
     Rc::new(CacheOp {
         inner: inner,

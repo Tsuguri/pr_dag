@@ -1,11 +1,52 @@
 mod operations;
 
+use std::rc::Rc;
+
 pub use operations::*;
 
-// #[no_mangle]
-// pub extern "C" fn create_leaf(value: f32) -> *mut dyn Operation {
-//     std::ptr::null_mut()
-// }
+// This node is exposed through FFI to language-specific bindings.
+// We cannot directly expose Operation pointers because 1. Rc, 2. fat pointer
+pub struct OperationNode {
+    inner: Rc<dyn Operation>,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn create_leaf(value: f32) -> *mut OperationNode {
+    let node = Box::new(OperationNode { inner: leaf(value) });
+    Box::into_raw(node)
+}
+
+// Does NOT take ownership of parameter node. Allows reuse of DAG node in multiple places
+#[unsafe(no_mangle)]
+pub extern "C" fn clone_operation(node: *mut OperationNode) -> *mut OperationNode {
+    let copy = Box::new(OperationNode {
+        inner: unsafe { (*node).inner.clone() },
+    });
+    //
+    Box::into_raw(copy)
+}
+
+// Takes ownership of both arguments.
+// Similar functions should be created for all library-provided operations
+// If there are a lot N-argument nodes, macro should be used
+#[unsafe(no_mangle)]
+pub extern "C" fn create_add_node(
+    left: *mut OperationNode,
+    right: *mut OperationNode,
+) -> *mut OperationNode {
+    let left = unsafe { Box::from_raw(left) };
+    let right = unsafe { Box::from_raw(right) };
+    let op = Box::new(OperationNode {
+        inner: add(left.inner, right.inner),
+    });
+    Box::into_raw(op)
+}
+
+// All Nodes that were created and still owned by host-language should be destroyed after usage.
+#[unsafe(no_mangle)]
+pub extern "C" fn destroy_node(node: *mut OperationNode) {
+    let _ = unsafe { Box::from_raw(node) };
+}
 
 #[cfg(test)]
 mod tests {
