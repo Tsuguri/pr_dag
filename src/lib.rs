@@ -59,6 +59,40 @@ pub extern "C" fn cache_node(node: *mut OperationNode) -> *mut OperationNode {
     Box::into_raw(op)
 }
 
+// FFI Custom Operation
+
+type OpCallback = extern "C" fn(u32, *const f32) -> f32;
+
+#[derive(Debug)]
+struct FFIOperation {
+    callback: OpCallback,
+    children: Vec<Rc<dyn Operation>>,
+}
+
+impl Operation for FFIOperation {
+    fn evaluate(&self) -> f32 {
+        let children_values: Vec<f32> = self.children.iter().map(|x| x.evaluate()).collect();
+        return (self.callback)(children_values.len() as u32, children_values.as_ptr());
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn custom_operation(
+    callback: OpCallback,
+    number_of_children: u32,
+    children: *const *mut OperationNode,
+) -> *mut OperationNode {
+    let children = unsafe { std::slice::from_raw_parts(children, number_of_children as usize) };
+    let children = children
+        .into_iter()
+        .map(|x| unsafe { Box::from_raw(*x).inner })
+        .collect();
+    let op = Box::new(OperationNode {
+        inner: Rc::new(FFIOperation { callback, children }),
+    });
+    Box::into_raw(op)
+}
+
 #[cfg(test)]
 mod tests {
 
