@@ -60,6 +60,12 @@ pub extern "C" fn cache_node(node: *mut OperationNode) -> *mut OperationNode {
 }
 
 // FFI Custom Operation
+// This operation will invoke provided callback when evaluating. As crossing the FFI boundary isn't
+// the cheapest operation, it's good idea to wrap this node in CacheOp node.
+//
+// If there are a lot of FFI operations with specific number of arguments, special version could be
+// made - it won't change performance much though as crossing the FFI boundary is probably the most
+// costly thing here.
 
 type OpCallback = extern "C" fn(u32, *const f32) -> f32;
 
@@ -76,6 +82,8 @@ impl Operation for FFIOperation {
     }
 }
 
+// This function doesn NOT take ownership of the children array BUT takes ownership of objects
+// pointed to by entries in this array.
 #[unsafe(no_mangle)]
 pub extern "C" fn custom_operation(
     callback: OpCallback,

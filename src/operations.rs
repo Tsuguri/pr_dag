@@ -24,6 +24,8 @@ pub fn cache(inner: Rc<dyn Operation>) -> Rc<dyn Operation> {
     })
 }
 
+// Example Operation. definiiotn + impl Operation has to be repeated for whatever operation should
+// be implemented by the library (or user of the library, no difference).
 #[derive(Debug)]
 pub struct AddOp {
     left: Rc<dyn Operation>,
