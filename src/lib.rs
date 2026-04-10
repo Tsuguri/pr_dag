@@ -75,18 +75,46 @@ pub fn leaf(value: f32) -> Box<dyn Operation> {
     })
 }
 
+pub fn eval(graph: Box<dyn Operation>) -> f32 {
+    let mut cache = EvaluationCache::create();
+
+    graph.evaluate(&mut cache)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::EvaluationCache;
 
-    use super::{add, leaf};
+    use super::{Operation, add, eval, leaf};
     #[test]
     fn basic_add() {
         let operation = add(leaf(10.0), leaf(12.0));
-        let mut cache = EvaluationCache::create();
 
-        let result = operation.evaluate(&mut cache);
+        assert_eq!(eval(operation), 22.0);
+    }
 
-        assert_eq!(result, 22.0);
+    #[test]
+    fn custom_op() {
+        // WARNING: this operation on floats doesn't make any sense!
+        #[derive(Debug, Hash)]
+        struct XOROp {
+            left: Box<dyn Operation>,
+            right: Box<dyn Operation>,
+        }
+
+        impl Operation for XOROp {
+            fn evaluate(&self, cache: &mut crate::EvaluationCache) -> f32 {
+                let left = cache.get_or_evaluate(&*self.left);
+                let right = cache.get_or_evaluate(&*self.right);
+
+                return f32::from_bits(left.to_bits() ^ right.to_bits());
+            }
+        }
+
+        let operation = Box::new(XOROp {
+            left: add(leaf(1.0), leaf(3.0)),
+            right: leaf(0.12),
+        });
+
+        let result = eval(operation);
     }
 }
