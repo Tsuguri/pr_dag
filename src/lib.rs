@@ -1,3 +1,4 @@
+use dyn_hash::DynHash;
 use std::{
     collections::HashMap,
     fmt::Debug,
@@ -14,12 +15,13 @@ impl EvaluationCache {
     }
 }
 
-pub trait Operation: Debug {
+pub trait Operation: Debug + DynHash {
     fn evaluate(&self, cache: &mut EvaluationCache) -> f32;
-    fn hash(&self) -> u64;
 }
 
-#[derive(Debug)]
+dyn_hash::hash_trait_object!(Operation);
+
+#[derive(Debug, Hash)]
 pub struct AddOp {
     left: Box<dyn Operation>,
     right: Box<dyn Operation>,
@@ -28,9 +30,6 @@ pub struct AddOp {
 impl Operation for AddOp {
     fn evaluate(&self, cache: &mut EvaluationCache) -> f32 {
         0.0f32
-    }
-    fn hash(&self) -> u64 {
-        0
     }
 }
 
